@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+
+  <extension point="org.eclipse.ui.newWizards">
+    <category id="fearless.category" name="Fearless"/>
+    <wizard
+      id="fearless.newProjectWizard"
+      name="Fearless Project"
+      category="fearless.category"
+      class="fearlessPluginProject.wizards.NewFearlessProjectWizard"
+      project="true"/>
+  </extension>
+
+  <extension point="org.eclipse.ui.importWizards">
+    <category id="fearless.importCategory" name="Fearless"/>
+    <wizard
+      id="fearless.importProjectWizard"
+      name="Fearless Project"
+      category="fearless.importCategory"
+      class="fearlessPluginProject.wizards.ImportFearlessProjectWizard"/>
+  </extension>
+
+  <extension point="org.eclipse.ui.editors">
+    <editor
+      id="fearless.editor"
+      name="Fearless Editor"
+      extensions="fear"
+      default="true"
+      class="fearlessPluginProject.editors.FearlessEditor"/>
+  </extension>
+
+  <extension point="org.eclipse.ui.decorators">
+    <decorator
+      id="fearless.decorator"
+      label="Fearless decorations"
+      state="true"
+      class="fearlessPluginProject.decorators.FearlessDecorator">
+      <enablement>
+        <objectClass name="org.eclipse.core.resources.IResource"/>
+      </enablement>
+    </decorator>
+  </extension>
+
+  <extension point="org.eclipse.ui.perspectiveExtensions">
+    <perspectiveExtension targetID="*">
+      <newWizardShortcut id="fearless.newProjectWizard"/>
+    </perspectiveExtension>
+  </extension>
+
+  <extension point="org.eclipse.core.expressions.propertyTesters">
+    <propertyTester
+      id="fearless.propertyTester"
+      namespace="fearless"
+      properties="isFearless"
+      type="java.lang.Object"
+      class="fearlessPluginProject.core.FearlessPropertyTester"/>
+  </extension>
+
+  <extension point="org.eclipse.core.runtime.adapters">
+    <factory
+      adaptableType="org.eclipse.core.resources.IResource"
+      class="fearlessPluginProject.launch.FearlessLaunchableAdapterFactory">
+      <adapter type="org.eclipse.debug.ui.actions.ILaunchable"/>
+    </factory>
+  </extension>
+
+  <extension point="org.eclipse.debug.core.launchConfigurationTypes">
+    <launchConfigurationType
+      id="fearless.launchType"
+      name="Fearless"
+      modes="run"
+      public="true"
+      delegate="fearlessPluginProject.launch.FearlessLaunchDelegate"/>
+  </extension>
+
+  <extension point="org.eclipse.debug.ui.launchShortcuts">
+    <shortcut
+      id="fearless.launchShortcut"
+      label="Fearless"
+      modes="run"
+      class="fearlessPluginProject.launch.FearlessLaunchShortcut">
+
+      <contextualLaunch>
+        <contextLabel mode="run" label="Fearless"/>
+
+        <enablement>
+          <or>
+            <with variable="selection">
+              <count value="1"/>
+              <iterate>
+                <test property="fearless.isFearless"/>
+              </iterate>
+            </with>
+            <with variable="activeEditorInput">
+              <test property="fearless.isFearless"/>
+            </with>
+          </or>
+        </enablement>
+      </contextualLaunch>
+
+      <configurationType id="fearless.launchType"/>
+    </shortcut>
+  </extension>
+
+</plugin>
