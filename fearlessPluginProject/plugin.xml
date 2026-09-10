@@ -11,4 +11,29 @@
     <startup class="fearlessPluginProject.Startup"/>
   </extension>
 
+  <extension point="org.eclipse.core.contenttype.contentTypes">
+    <file-association content-type="org.eclipse.core.runtime.text" file-extensions="fear,fearless"/>
+  </extension>
+
+  <extension point="org.eclipse.ui.commands">
+    <category id="fearlessPluginProject.category" name="Fearless"/>
+    <command id="fearlessPluginProject.newProject" name="New Fearless Project..."
+      categoryId="fearlessPluginProject.category" defaultHandler="fearlessPluginProject.Commands"/>
+    <command id="fearlessPluginProject.run" name="Run Fearless Project"
+      categoryId="fearlessPluginProject.category" defaultHandler="fearlessPluginProject.Commands"/>
+    <command id="fearlessPluginProject.terminate" name="Terminate Fearless Project"
+      categoryId="fearlessPluginProject.category" defaultHandler="fearlessPluginProject.Commands"/>
+  </extension>
+
+  <extension point="org.eclipse.ui.menus">
+    <menuContribution locationURI="menu:org.eclipse.ui.main.menu?after=additions">
+      <menu id="fearlessPluginProject.menu" label="Fearless">
+        <command commandId="fearlessPluginProject.newProject" style="push"/>
+        <separator name="running" visible="true"/>
+        <command commandId="fearlessPluginProject.run" style="push"/>
+        <command commandId="fearlessPluginProject.terminate" style="push"/>
+      </menu>
+    </menuContribution>
+  </extension>
+
 </plugin>

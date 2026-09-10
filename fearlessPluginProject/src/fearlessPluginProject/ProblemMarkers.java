@@ -1,8 +1,8 @@
 package fearlessPluginProject;
 
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IMarker;
-import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.Path;
@@ -14,27 +14,18 @@ import org.eclipse.core.runtime.Path;
 public final class ProblemMarkers{
   public static final String type= "fearlessPluginProject.problem";
   private ProblemMarkers(){}
-  public static void apply(IProject project, String text){
-    try{ project.deleteMarkers(type, true, IResource.DEPTH_INFINITE); }
-    catch(CoreException e){ return; }
+  public static void apply(IFolder src, String text) throws CoreException{
+    src.getProject().deleteMarkers(type, true, IResource.DEPTH_INFINITE);
     if (text.isBlank()){ return; }
     var lines= text.split("\n", 3);
-    if (lines.length < 3){ return; }
-    var relPath= lines[0].strip();
-    int line;
-    try{ line= Integer.parseInt(lines[1].strip()); }
-    catch(NumberFormatException e){ return; }
-    var file= project.getFile(new Path(relPath));
+    var file= src.getFile(new Path(lines[0].strip()));
     if (!file.exists()){ return; }
-    createMarker(file, line, lines[2]);
+    createMarker(file, Integer.parseInt(lines[1].strip()), lines[2]);
   }
-  private static void createMarker(IFile file, int line, String message){
-    try{
-      var marker= file.createMarker(type);
-      marker.setAttribute(IMarker.LINE_NUMBER, line);
-      marker.setAttribute(IMarker.MESSAGE, message);
-      marker.setAttribute(IMarker.SEVERITY, IMarker.SEVERITY_ERROR);
-    }
-    catch(CoreException e){}
+  private static void createMarker(IFile file, int line, String message) throws CoreException{
+    var marker= file.createMarker(type);
+    marker.setAttribute(IMarker.LINE_NUMBER, line);
+    marker.setAttribute(IMarker.MESSAGE, message);
+    marker.setAttribute(IMarker.SEVERITY, IMarker.SEVERITY_ERROR);
   }
 }
