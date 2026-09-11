@@ -11,6 +11,11 @@
     <startup class="fearlessPluginProject.Startup"/>
   </extension>
 
+  <extension point="org.eclipse.ui.perspectives">
+    <perspective id="fearlessPluginProject.perspective" name="Fearless"
+      class="fearlessPluginProject.FearlessPerspective" icon="icons/fearless16.png"/>
+  </extension>
+
   <extension point="org.eclipse.core.contenttype.contentTypes">
     <file-association content-type="org.eclipse.core.runtime.text" file-extensions="fear,fearless"/>
   </extension>
@@ -28,6 +33,11 @@
   <extension point="org.eclipse.ui.menus">
     <menuContribution locationURI="menu:org.eclipse.ui.main.menu?after=additions">
       <menu id="fearlessPluginProject.menu" label="Fearless">
+        <visibleWhen checkEnabled="false">
+          <with variable="activeWorkbenchWindow.activePerspective">
+            <equals value="fearlessPluginProject.perspective"/>
+          </with>
+        </visibleWhen>
         <command commandId="fearlessPluginProject.newProject" style="push"/>
         <separator name="running" visible="true"/>
         <command commandId="fearlessPluginProject.run" style="push"/>
