@@ -18,11 +18,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -120,23 +118,6 @@ public final class Window{
       ticker.start();
     });
   }
-  public String nameFolder(Path folder){
-    var taken= registry.all().stream().map(Entry::alias).collect(Collectors.toSet());
-    return Names.makeUnique(folder,taken,suggested->onEdt(()->prompt(folder,suggested,taken)));
-  }
-  private String prompt(Path folder, String suggested, Set<String> taken){
-    var question= """
-      Another registered project is already called "%s".
-      Choose the name to show for
-      %s
-      A name uses only lowercase letters, digits and single underscores, and starts with a letter or an underscore.""".formatted(Names.compactName(folder),folder);
-    while(true){
-      var answer= JOptionPane.showInputDialog(frame,question,suggested);
-      if (answer == null){ return suggested; }
-      var name= answer.strip();
-      if (Names.isName(name) && Names.isFree(folder,name,taken)){ return name; }
-    }
-  }
   public boolean askForget(){
     return onEdt(()->JOptionPane.showConfirmDialog(frame,"""
       Remove Fearless as the program registered to open Fearless projects?
@@ -148,8 +129,9 @@ public final class Window{
     SwingUtilities.invokeLater(()->JOptionPane.showMessageDialog(frame,problem.getMessage(),"Fearless",JOptionPane.WARNING_MESSAGE));
   }
   public void select(Path folder){ SwingUtilities.invokeLater(()->tiles.select(folder)); }
-  public void run(Path folder){ SwingUtilities.invokeLater(()->panel(folder).compileOrRun()); }
+  public void run(Path folder, Optional<String> main){ SwingUtilities.invokeLater(()->panel(folder).compileOrRun(main)); }
   public void terminate(Path folder){ SwingUtilities.invokeLater(()->panel(folder).session.terminate()); }
+  public void state(Path folder, Path reply){ SwingUtilities.invokeLater(()->panel(folder).state(reply)); }
   public void foldersChanged(){ SwingUtilities.invokeLater(this::foldersChangedHere); }
   public List<String> runningPrograms(){ return open.values().stream().filter(this::live).map(this::describe).toList(); }
   private boolean isRunning(Path folder){ return open.containsKey(folder) && live(open.get(folder)); }
@@ -236,7 +218,7 @@ public final class Window{
     if (chooser.showOpenDialog(frame) != JFileChooser.APPROVE_OPTION){ return; }
     register(List.of(chooser.getSelectedFile().toPath()));
   }
-  void register(List<Path> folders){ main.worker.execute(()->folders.forEach(p->main.register(p.toString()))); }
+  void register(List<Path> folders){ main.worker.execute(()->folders.forEach(p->main.register(p.toString(),this::explain))); }
   private TransferHandler dropHandler(){
     return new TransferHandler(){
       @Override public boolean canImport(TransferSupport support){

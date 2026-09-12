@@ -26,8 +26,14 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
+import controller.Registry.Entry;
+import controller.Registry.Kind;
 import fileSupport.NativeLocaleForcer;
+import mainCoordinator.MakeDemo;
+import realSourceOracle.AutoloadHandler;
 import fileSupport.StringFiles;
 import gui.Tray;
 import gui.Window;
@@ -142,9 +148,9 @@ public final class Main{
     try{ messages= take(); }
     catch(IOException e){ throw Violation.couldNotDrainMessageFolder(msgDir(),e); }
     if (messages.isEmpty()){ return; }
-    messages.forEach(this::register);
-    window.foldersChanged();
     window.show();
+    messages.forEach(m->register(m,e->eclipse.note(e.getMessage()+"\n")));
+    window.foldersChanged();
   }
   private List<String> take() throws IOException{
     var files= list("*.msg");
@@ -166,26 +172,37 @@ public final class Main{
     try(var stream= Files.newDirectoryStream(msgDir(),glob)){ stream.forEach(files::add); }
     return files;
   }
-  //A message is the folder to select, or a verb, a newline, then the folder.
-  public void register(String message){
-    var nl= message.indexOf('\n');
-    var verb= nl < 0 ? "select" : message.substring(0,nl);
-    var folder= projectFolder(message.substring(nl+1),managerDir);
+  //A message is the folder to select, or a verb, a newline, then the folder, then
+  //for run the optional main to run, and for state the file the answer goes to.
+  public void register(String message, Consumer<UserError> report){
+    var lines= message.lines().toList();
+    if (lines.isEmpty()){ return; }
+    var verb= lines.size() == 1 ? "select" : lines.getFirst();
+    var folder= projectFolder(lines.get(lines.size() == 1 ? 0 : 1),managerDir);
     if (folder.isEmpty()){ return; }
     if (!registry.has(folder.get())){
       var nested= registry.overlapping(folder.get());
-      if (nested.isPresent()){ window.explain(Report.folderNestedWithRegistered(folder.get(),nested.get())); return; }
-      var alias= window.nameFolder(folder.get());
+      if (nested.isPresent()){ report.accept(Report.folderNestedWithRegistered(folder.get(),nested.get())); return; }
+      var wanted= Names.compactName(folder.get());
+      var fresh= Fs.of(()->{ try(var s= Files.list(folder.get())){ return s.findAny().isEmpty(); } });
+      var taken= registry.all().stream().map(Entry::alias).collect(Collectors.toSet());
+      var alias= Names.makeUnique(folder.get(),taken);
+      if (!alias.equals(wanted)){ report.accept(Report.projectNamed(folder.get(),wanted,alias)); }
       Fs.rmTree(folder.get().resolve(Facts.outDir));
       Fs.rmTree(eclipse.reports(alias));
       registry.add(alias,folder.get());
+      if (fresh){
+        registry.update(folder.get(),e->e.withKind(Kind.code));
+        MakeDemo.hello(folder.get(),Names.pkgName(alias),AutoloadHandler.capFirst(alias));
+      }
       window.foldersChanged();
     }
     window.select(folder.get());
     switch(verb){
       case "select" -> {}
-      case "run" -> window.run(folder.get());
+      case "run" -> window.run(folder.get(),lines.size() > 2 ? Optional.of(lines.get(2)) : Optional.empty());
       case "terminate" -> window.terminate(folder.get());
+      case "state" -> window.state(folder.get(),Path.of(lines.get(2)));
       default -> throw Bug.unreachable();
     }
   }

@@ -13,6 +13,9 @@ import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import controller.Eclipse;
+import realSourceOracle.AutoloadHandler;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -64,11 +67,12 @@ public final class Panel{
   private final Path folder;
   private final Runnable onChange;
   final Session session;
+  private final Path console;
   private final AtomicBoolean checking= new AtomicBoolean();
   private final JPanel root= new JPanel(new BorderLayout(8,8));
   private final JTextArea output= named(new JTextArea(10,60),"output");
   private final JScrollPane outputScroll= new JScrollPane(output);
-  private final JButton clearOutput= small("Clear output",()->output.setText(""));
+  private final JButton clearOutput= small("Clear output",this::clearAll);
   private final JLayeredPane outputLayer= new JLayeredPane();
   private final JTextArea details= named(new JTextArea(9,40),"details");
   private final JPanel kinds= new JPanel(new FlowLayout(FlowLayout.LEFT,8,0));
@@ -93,6 +97,7 @@ public final class Panel{
     this.registry= main.registry;
     this.folder= folder;
     this.onChange= onChange;
+    console= main.eclipse.reports(entry().alias()).resolve("console.txt");
     session= new Session(folder,main.eclipse.reports(entry().alias()),main.worker,this::append,this::refreshLater);
     facts= Facts.of(folder,entry().kind());
     output.setEditable(false);
@@ -110,7 +115,7 @@ public final class Panel{
     logScroll.setPreferredSize(new Dimension(0,140));
     logList.addListSelectionListener(_->updateLogButtons());
     outputScroll.setBorder(BorderFactory.createTitledBorder("Output"));
-    action.addActionListener(_->{ if (session.running().isPresent()){ session.terminate(); } else { compileOrRun(); } });
+    action.addActionListener(_->{ if (session.running().isPresent()){ session.terminate(); } else { compileOrRun(Optional.empty()); } });
     outputLayer.setLayout(null);
     outputLayer.add(outputScroll,JLayeredPane.DEFAULT_LAYER);
     outputLayer.add(clearOutput,JLayeredPane.PALETTE_LAYER);
@@ -161,7 +166,9 @@ public final class Panel{
     var x= Math.max(0,outputLayer.getWidth()-d.width-outputScroll.getVerticalScrollBar().getPreferredSize().width-4);
     clearOutput.setBounds(x,4,d.width,d.height);
   }
+  private void clearAll(){ output.setText(""); Fs.writeUtf8(console,""); }
   private void append(String text){
+    Eclipse.append(console,text);
     SwingUtilities.invokeLater(()->{
       var bar= outputScroll.getVerticalScrollBar();
       var following= bar.getValue()+bar.getVisibleAmount() >= bar.getMaximum()-16;
@@ -300,7 +307,7 @@ public final class Panel{
     var storedEdits= codeEntry.edits().getOrDefault(dataEntry.alias(),List.of());
     var readOn= codeEntry.reads().containsKey(dataEntry.alias());
     var writeOn= codeEntry.edits().containsKey(dataEntry.alias());
-    var initial= !storedReads.isEmpty() ? storedReads : !storedEdits.isEmpty() ? storedEdits : List.of(Names.defaultTypeName(dataEntry.alias()));
+    var initial= !storedReads.isEmpty() ? storedReads : !storedEdits.isEmpty() ? storedEdits : List.of(AutoloadHandler.capFirst(dataEntry.alias()));
     var read= new JCheckBox("read",readOn);
     var write= new JCheckBox("write",writeOn);
     var field= new JTextField(String.join(" ",initial),14);
@@ -353,12 +360,17 @@ public final class Panel{
     action.setEnabled(!busy && (needsCompile || !selectedMains().isEmpty()));
     openDocs.setEnabled(session.mains().isPresent());
   }
-  void compileOrRun(){
+  void state(Path reply){
+    var tmp= reply.resolveSibling(reply.getFileName()+".tmp");
+    Fs.writeUtf8(tmp,Eclipse.state(session.mainFiles(),session.running()));
+    Fs.ofV(()->Files.move(tmp,reply,StandardCopyOption.ATOMIC_MOVE));
+  }
+  void compileOrRun(Optional<String> main){
     information.setOpen(false);
     links.setOpen(false);
     var entry= entry();
     if (entry.kind() != Kind.code){ check(); return; }
-    if (facts.cacheUpToDate()){ changed(()->registry.ran(folder,System.currentTimeMillis())); session.run(entry.mains()); return; }
+    if (facts.cacheUpToDate()){ changed(()->registry.ran(folder,System.currentTimeMillis())); session.run(main.map(List::of).orElseGet(entry::mains)); return; }
     var link= registry.linkProblem(entry);
     if (link.isPresent()){ append(link.get()+"\n"); return; }
     changed(()->registry.compiled(folder,System.currentTimeMillis()));

@@ -25,7 +25,7 @@ final class NamesTest{
     assertTrue(Names.isName("_x9"));
     assertFalse(Names.isName("myGame"));
     assertFalse(Names.isName("2fast"));
-    assertFalse(Names.isName("a__b"));
+    assertTrue(Names.isName("a__b"));
     assertFalse(Names.isName("con"));
     assertFalse(Names.isName(""));
     assertFalse(Names.isName("a/b"));
@@ -44,43 +44,41 @@ final class NamesTest{
     assertEquals("hello2",Names.free(project,"hello",Set.of("hello")));
     assertEquals("hello3",Names.free(project,"hello",Set.of("hello","hello2")));
   }
-  @Test void aFreeNameIsNeverAskedAboutButStillGetsAMarkerFile(@TempDir Path dir){
+  @Test void aFreeNameIsKeptAndGetsAMarkerFile(@TempDir Path dir){
     var project= folder(dir,"someproject");
-    Names.makeUnique(project,Set.of("other"),_->{ throw new AssertionError("must not ask"); });
+    assertEquals("someproject",Names.makeUnique(project,Set.of("other")));
     assertEquals("someproject",Names.compactName(project));
     assertTrue(Files.isRegularFile(project.resolve("someproject.fearless")));
   }
   @Test void makeUniqueIsIdempotentOnAnAlreadyMarkedFolder(@TempDir Path dir){
     var project= folder(dir,"someproject");
-    Names.makeUnique(project,Set.of("other"),_->{ throw new AssertionError("must not ask"); });
-    Names.makeUnique(project,Set.of("other"),_->{ throw new AssertionError("must not ask"); });
+    Names.makeUnique(project,Set.of("other"));
+    assertEquals("someproject",Names.makeUnique(project,Set.of("other")));
     assertEquals("someproject",Names.compactName(project));
   }
-  @Test void anUnsafeFolderNameIsAskedAboutEvenWithNoCollision(@TempDir Path dir){
+  @Test void anUnsafeFolderNameIsMadeAcceptableEvenWithNoCollision(@TempDir Path dir){
     var project= folder(dir,"someProject");
-    assertEquals("someproject",Names.makeUnique(project,Set.of("other"),s->s));
+    assertEquals("someproject",Names.makeUnique(project,Set.of("other")));
     assertTrue(Files.isRegularFile(project.resolve("someproject.fearless")));
   }
-  @Test void aTakenNameIsAskedAboutAndWrittenIntoANewFearlessFile(@TempDir Path dir){
+  @Test void aTakenNameGetsANumberAndANewFearlessFile(@TempDir Path dir){
     var project= folder(dir,"someProject");
-    Names.makeUnique(project,Set.of("someproject"),_->"my_game");
-    assertEquals("my_game",Names.compactName(project));
-    assertFalse(Fs.readUtf8(project.resolve("my_game.fearless")).isEmpty());
+    assertEquals("someproject2",Names.makeUnique(project,Set.of("someproject")));
+    assertEquals("someproject2",Names.compactName(project));
+    assertFalse(Fs.readUtf8(project.resolve("someproject2.fearless")).isEmpty());
   }
-  @Test void theSuggestedNameIsTheFolderNameMadeAcceptableAndFree(@TempDir Path dir){
+  @Test void theChosenNameIsTheFolderNameMadeAcceptableAndFree(@TempDir Path dir){
     var project= folder(dir,"helloWorld");
     Fs.writeUtf8(project.resolve("start.fearless"),"");
-    var suggested= new String[1];
-    Names.makeUnique(project,Set.of("start","helloworld"),s->{ suggested[0]= s; return s; });
-    assertEquals("helloworld2",suggested[0]);
+    assertEquals("helloworld2",Names.makeUnique(project,Set.of("start","helloworld")));
     assertEquals("helloworld2",Names.compactName(project));
   }
   @Test void anExistingFearlessFileIsRenamedNotDuplicated(@TempDir Path dir){
     var project= folder(dir,"someProject");
     Fs.writeUtf8(project.resolve("start.fearless"),"kept\n");
-    Names.makeUnique(project,Set.of("start"),_->"my_game");
+    assertEquals("someproject",Names.makeUnique(project,Set.of("start")));
     assertFalse(Files.exists(project.resolve("start.fearless")));
-    assertEquals("kept\n",Fs.readUtf8(project.resolve("my_game.fearless")));
+    assertEquals("kept\n",Fs.readUtf8(project.resolve("someproject.fearless")));
   }
   @Test void markerProblemIsEmptyWhenTheMarkerMatchesTheAlias(@TempDir Path dir){
     var project= folder(dir,"someProject");
@@ -97,11 +95,12 @@ final class NamesTest{
     Fs.writeUtf8(project.resolve("other.fearless"),"");
     assertTrue(Names.markerProblem(project,"my_game").orElseThrow().contains("More than one"));
   }
-  @Test void defaultTypeNameUppercasesTheFirstLetter(){
-    assertEquals("Mydata",Names.defaultTypeName("mydata"));
-    assertEquals("My_data_2",Names.defaultTypeName("my_data_2"));
-    assertEquals("_Foo",Names.defaultTypeName("_foo"));
-    assertTrue(core.TName.isTypeName(Names.defaultTypeName("mydata")));
-    assertTrue(core.TName.isTypeName(Names.defaultTypeName("_foo")));
+  @Test void pkgNameIsTheAliasMadeAcceptable(){
+    assertEquals("eclipseexample",Names.pkgName("eclipseexample"));
+    assertEquals("foo",Names.pkgName("_foo"));
+    assertEquals("app_base",Names.pkgName("base"));
+    assertEquals("app_rank",Names.pkgName("rank"));
+    assertEquals("app_",Names.pkgName("_"));
+    assertTrue(core.TName.isPkgName(Names.pkgName("_")));
   }
 }

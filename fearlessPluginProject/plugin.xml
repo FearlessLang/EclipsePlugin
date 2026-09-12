@@ -31,6 +31,9 @@
   </extension>
 
   <extension point="org.eclipse.ui.menus">
+    <menuContribution locationURI="popup:org.eclipse.ui.popup.any?after=additions">
+      <dynamic class="fearlessPluginProject.PopupItems" id="fearlessPluginProject.popup"/>
+    </menuContribution>
     <menuContribution locationURI="menu:org.eclipse.ui.main.menu?after=additions">
       <menu id="fearlessPluginProject.menu" label="Fearless">
         <visibleWhen checkEnabled="false">

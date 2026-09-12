@@ -142,7 +142,7 @@ public final class Registry{
     var entries= new ArrayList<Entry>();
     for (var field: top.fields()){
       if (!Names.isName(field.key())){
-        throw Info.err(source,field.keySpan(),"\""+field.key()+"\" is not a valid project name: a project name uses only lowercase letters, digits and single underscores, and starts with a letter or an underscore.");
+        throw Info.err(source,field.keySpan(),"\""+field.key()+"\" is not a valid project name: a project name uses only lowercase letters, digits and underscores, and starts with a letter or an underscore.");
       }
       entries.add(entryOf(source,field));
     }

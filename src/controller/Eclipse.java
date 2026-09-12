@@ -1,17 +1,23 @@
 package controller;
 
 import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
+import static java.nio.file.StandardOpenOption.APPEND;
+import static java.nio.file.StandardOpenOption.CREATE;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import controller.Registry.Entry;
 import tools.Fs;
 import tools.JavacTool;
 import userMessages.Report;
 import userMessages.Violation;
+import utils.Join;
 
 /// The manager's side of the Eclipse plugin (fearlessPluginProject). Eclipse writes
 /// nothing into a project folder: it reads projects.txt and each alias's reports from
@@ -19,6 +25,17 @@ import userMessages.Violation;
 public record Eclipse(Path dir){
   private static final Pattern at= Pattern.compile("(?m)^In file: fear:/(\\S+)\\n\\n(\\d+)\\| ");
   public Path reports(String alias){ return dir.resolve(alias); }
+  public void note(String text){ append(dir.resolve("console.txt"),text); }
+  public static String state(Optional<Map<String,String>> mains, Optional<String> running){
+    var lines= Stream.concat(
+      Stream.concat(mains.isEmpty() ? Stream.of("needsCompiling") : Stream.of(), running.stream().map(r->"running "+r)),
+      mains.orElse(Map.of()).entrySet().stream().map(e->"main "+e.getKey()+" "+e.getValue()));
+    return Join.of(lines,"","\n","\n","");
+  }
+  public static void append(Path file, String text){
+    Fs.ensureDir(file.getParent());
+    Fs.ofV(()->Files.writeString(file,text,CREATE,APPEND));
+  }
   public String connect(Path chosen, Path msgDir){
     var eclipse= chosen.getParent();
     if (!Files.isRegularFile(eclipse.resolve(".eclipseproduct"))){ throw Report.notAnEclipseInstall(eclipse); }
