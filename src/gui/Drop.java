@@ -44,7 +44,10 @@ public final class Drop{
     return data.lines().filter(l->!l.isBlank() && !l.startsWith("#")).flatMap(Drop::path).toList();
   }
   private static Stream<Path> path(String line){
-    try{ return Stream.of(Path.of(new URI(line.strip()))); }
+    try{
+      var p= Path.of(new URI(line.strip()));
+      return p.isAbsolute() ? Stream.of(p) : Stream.of();
+    }
     catch(URISyntaxException|IllegalArgumentException e){ return Stream.of(); }
   }
 }

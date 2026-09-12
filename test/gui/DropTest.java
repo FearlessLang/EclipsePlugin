@@ -17,31 +17,32 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 final class DropTest{
+  private static final String root= Path.of(".").toAbsolutePath().getRoot().toUri().toString();
   @Test void aFileListDropIsReadStraightFromTheFlavor(){
     var t= fixed(DataFlavor.javaFileListFlavor,List.of(new File("/home/me/myproject")));
     assertTrue(Drop.hasFiles(t));
     assertEquals(List.of(Path.of("/home/me/myproject")),Drop.paths(t));
   }
   @Test void aUriListStringIsSplitOnLines(){
-    var t= fixed(uriList("java.lang.String"),"file:///home/me/myproject\r\nfile:///home/me/other.fearless\r\n");
-    assertUris(Drop.paths(t),"file:///home/me/myproject","file:///home/me/other.fearless");
+    var t= fixed(uriList("java.lang.String"),root+"home/me/myproject\r\n"+root+"home/me/other.fearless\r\n");
+    assertUris(Drop.paths(t),root+"home/me/myproject",root+"home/me/other.fearless");
   }
   @Test void aUriListReaderIsReadInFull(){
-    var t= fixed(uriList("java.io.Reader"),new StringReader("file:///home/me/myproject\n"));
-    assertUris(Drop.paths(t),"file:///home/me/myproject");
+    var t= fixed(uriList("java.io.Reader"),new StringReader(root+"home/me/myproject\n"));
+    assertUris(Drop.paths(t),root+"home/me/myproject");
   }
   @Test void aUriListInputStreamIsReadAsUtf8(){
-    var t= fixed(uriList("java.io.InputStream"),new ByteArrayInputStream("file:///home/me/myproject\n".getBytes(StandardCharsets.UTF_8)));
-    assertUris(Drop.paths(t),"file:///home/me/myproject");
+    var t= fixed(uriList("java.io.InputStream"),new ByteArrayInputStream((root+"home/me/myproject\n").getBytes(StandardCharsets.UTF_8)));
+    assertUris(Drop.paths(t),root+"home/me/myproject");
   }
   @Test void commentAndBlankLinesAreSkipped(){
-    assertUris(Drop.fromUriList("# a comment\r\n\r\nfile:///home/me/myproject\r\n"),"file:///home/me/myproject");
+    assertUris(Drop.fromUriList("# a comment\r\n\r\n"+root+"home/me/myproject\r\n"),root+"home/me/myproject");
   }
   @Test void aSpaceInTheNameIsPercentDecoded(){
-    assertUris(Drop.fromUriList("file:///home/me/My%20Project\r\n"),"file:///home/me/My%20Project");
+    assertUris(Drop.fromUriList(root+"home/me/My%20Project\r\n"),root+"home/me/My%20Project");
   }
   @Test void aBareLineFeedIsAcceptedToo(){
-    assertUris(Drop.fromUriList("file:///home/me/myproject\n"),"file:///home/me/myproject");
+    assertUris(Drop.fromUriList(root+"home/me/myproject\n"),root+"home/me/myproject");
   }
   @Test void aDropWithNeitherFlavorHasNothingToOffer(){
     var t= fixed(DataFlavor.stringFlavor,"just text");
