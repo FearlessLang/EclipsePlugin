@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import managerData.Kind;
+import fileSupport.LogFiles;
 import managerInfo.FolderFacts;
 import tools.Fs;
 
@@ -51,7 +52,7 @@ final class FolderFactsTest{
     var project= project(dir,"someProject");
     var stamp= after(project);
     cache(project,"hello",stamp);
-    var written= project.resolve(FolderFacts.runDir);
+    var written= project.resolve(LogFiles.runDir);
     at(written.resolve("eclipse").resolve("problems.txt"),"",stamp+1000);
     at(written.resolve("logs").resolve("_base").resolve("unit_test_log.log"),"x\n",stamp+1000);
     var facts= FolderFacts.of(project,Kind.code);

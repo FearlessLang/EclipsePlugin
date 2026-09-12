@@ -14,7 +14,7 @@ import coordinator.CapabilityEnvironment;
 import coordinator.Coordinator;
 import core.E.Literal;
 import core.OtherPackages;
-import managerInfo.JUnitReport;
+import fileSupport.JUnitReport;
 import naiveBackend.BackendTools;
 import tools.ChildJvm;
 import tools.JavacTool;

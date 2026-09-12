@@ -16,7 +16,6 @@ import javax.swing.SwingUtilities;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import mainController.LocalResources;
 import managerData.Kind;
 import managerInfo.FolderInfo;
 import managerList.FolderList;
@@ -25,7 +24,7 @@ import utils.Box;
 import utils.ThrowingConsumer;
 
 final class ManagerGuiShotTest{
-  static final Path shots= LocalResources.controller.resolve(".out").resolve("guiShots");
+  static final Path shots= Path.of(".out","guiShots");
   private static void onEdt(Runnable r){ ThrowingConsumer.of(SwingUtilities::invokeAndWait).accept(r); }
   private static <T> T onEdtGet(Supplier<T> f){
     var out= new Box<T>(null);
