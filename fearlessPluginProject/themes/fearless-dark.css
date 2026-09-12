@@ -1,0 +1,8 @@
+.comment { color: #6A9955; }
+.comment.line.documentation.example { font-weight: bold; }
+.storage.modifier { font-weight: bold; color: #D670D6; }
+.keyword { font-weight: bold; color: #D670D6; }
+.entity.name.type { color: #6FA8FF; }
+.entity.name.function { color: #FF7B72; }
+.variable.parameter { color: #E0B060; }
+.punctuation { color: #D4D4D4; }

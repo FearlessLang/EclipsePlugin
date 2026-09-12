@@ -17,7 +17,25 @@
   </extension>
 
   <extension point="org.eclipse.core.contenttype.contentTypes">
-    <file-association content-type="org.eclipse.core.runtime.text" file-extensions="fear,fearless"/>
+    <content-type id="fearlessPluginProject.source" name="Fearless Source"
+      base-type="org.eclipse.core.runtime.text" file-extensions="fear,fearless" priority="high"/>
+  </extension>
+
+  <extension point="org.eclipse.ui.editors">
+    <editorContentTypeBinding contentTypeId="fearlessPluginProject.source"
+      editorId="org.eclipse.ui.genericeditor.GenericEditor"/>
+  </extension>
+
+  <extension point="org.eclipse.tm4e.registry.grammars">
+    <grammar scopeName="source.fearless" path="syntaxes/fearless.tmLanguage.json"/>
+    <scopeNameContentTypeBinding scopeName="source.fearless" contentTypeId="fearlessPluginProject.source"/>
+  </extension>
+
+  <extension point="org.eclipse.tm4e.ui.themes">
+    <theme id="fearlessPluginProject.light" name="Fearless Light" path="themes/fearless-light.css"/>
+    <theme id="fearlessPluginProject.dark" name="Fearless Dark" path="themes/fearless-dark.css" dark="true"/>
+    <themeAssociation themeId="fearlessPluginProject.light" scopeName="source.fearless" whenDark="false"/>
+    <themeAssociation themeId="fearlessPluginProject.dark" scopeName="source.fearless" whenDark="true"/>
   </extension>
 
   <extension point="org.eclipse.ui.commands">
