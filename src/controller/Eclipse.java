@@ -1,6 +1,8 @@
 package controller;
 
 import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
+import static java.nio.file.StandardOpenOption.APPEND;
+import static java.nio.file.StandardOpenOption.CREATE;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -19,6 +21,11 @@ import userMessages.Violation;
 public record Eclipse(Path dir){
   private static final Pattern at= Pattern.compile("(?m)^In file: fear:/(\\S+)\\n\\n(\\d+)\\| ");
   public Path reports(String alias){ return dir.resolve(alias); }
+  public void note(String text){ append(dir.resolve("console.txt"),text); }
+  public static void append(Path file, String text){
+    Fs.ensureDir(file.getParent());
+    Fs.ofV(()->Files.writeString(file,text,CREATE,APPEND));
+  }
   public String connect(Path chosen, Path msgDir){
     var eclipse= chosen.getParent();
     if (!Files.isRegularFile(eclipse.resolve(".eclipseproduct"))){ throw Report.notAnEclipseInstall(eclipse); }

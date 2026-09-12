@@ -39,6 +39,7 @@ public final class ManagerLink{
     return res;
   }
   public Path reports(String alias){ return eclipse.resolve(alias); }
+  public Path console(){ return eclipse.resolve("console.txt"); }
   public void send(String verb, Path folder){
     var name= "%020d-%s".formatted(System.currentTimeMillis(), UUID.randomUUID());
     var tmp= messages.resolve(name+".tmp");

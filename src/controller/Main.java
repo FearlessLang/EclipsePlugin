@@ -26,6 +26,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import controller.Registry.Entry;
@@ -147,7 +148,7 @@ public final class Main{
     catch(IOException e){ throw Violation.couldNotDrainMessageFolder(msgDir(),e); }
     if (messages.isEmpty()){ return; }
     window.show();
-    messages.forEach(this::register);
+    messages.forEach(m->register(m,e->eclipse.note(e.getMessage()+"\n")));
     window.foldersChanged();
   }
   private List<String> take() throws IOException{
@@ -171,19 +172,19 @@ public final class Main{
     return files;
   }
   //A message is the folder to select, or a verb, a newline, then the folder.
-  public void register(String message){
+  public void register(String message, Consumer<UserError> report){
     var nl= message.indexOf('\n');
     var verb= nl < 0 ? "select" : message.substring(0,nl);
     var folder= projectFolder(message.substring(nl+1),managerDir);
     if (folder.isEmpty()){ return; }
     if (!registry.has(folder.get())){
       var nested= registry.overlapping(folder.get());
-      if (nested.isPresent()){ window.explain(Report.folderNestedWithRegistered(folder.get(),nested.get())); return; }
+      if (nested.isPresent()){ report.accept(Report.folderNestedWithRegistered(folder.get(),nested.get())); return; }
       var wanted= Names.compactName(folder.get());
       var fresh= Fs.of(()->{ try(var s= Files.list(folder.get())){ return s.findAny().isEmpty(); } });
       var taken= registry.all().stream().map(Entry::alias).collect(Collectors.toSet());
       var alias= Names.makeUnique(folder.get(),taken);
-      if (!alias.equals(wanted)){ window.explain(Report.projectNamed(folder.get(),wanted,alias)); }
+      if (!alias.equals(wanted)){ report.accept(Report.projectNamed(folder.get(),wanted,alias)); }
       Fs.rmTree(folder.get().resolve(Facts.outDir));
       Fs.rmTree(eclipse.reports(alias));
       registry.add(alias,folder.get());

@@ -13,6 +13,7 @@ import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import controller.Eclipse;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -64,11 +65,12 @@ public final class Panel{
   private final Path folder;
   private final Runnable onChange;
   final Session session;
+  private final Path console;
   private final AtomicBoolean checking= new AtomicBoolean();
   private final JPanel root= new JPanel(new BorderLayout(8,8));
   private final JTextArea output= named(new JTextArea(10,60),"output");
   private final JScrollPane outputScroll= new JScrollPane(output);
-  private final JButton clearOutput= small("Clear output",()->output.setText(""));
+  private final JButton clearOutput= small("Clear output",this::clearAll);
   private final JLayeredPane outputLayer= new JLayeredPane();
   private final JTextArea details= named(new JTextArea(9,40),"details");
   private final JPanel kinds= new JPanel(new FlowLayout(FlowLayout.LEFT,8,0));
@@ -93,6 +95,7 @@ public final class Panel{
     this.registry= main.registry;
     this.folder= folder;
     this.onChange= onChange;
+    console= main.eclipse.reports(entry().alias()).resolve("console.txt");
     session= new Session(folder,main.eclipse.reports(entry().alias()),main.worker,this::append,this::refreshLater);
     facts= Facts.of(folder,entry().kind());
     output.setEditable(false);
@@ -161,7 +164,9 @@ public final class Panel{
     var x= Math.max(0,outputLayer.getWidth()-d.width-outputScroll.getVerticalScrollBar().getPreferredSize().width-4);
     clearOutput.setBounds(x,4,d.width,d.height);
   }
+  private void clearAll(){ output.setText(""); Fs.writeUtf8(console,""); }
   private void append(String text){
+    Eclipse.append(console,text);
     SwingUtilities.invokeLater(()->{
       var bar= outputScroll.getVerticalScrollBar();
       var following= bar.getValue()+bar.getVisibleAmount() >= bar.getMaximum()-16;
