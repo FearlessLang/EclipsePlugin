@@ -1,6 +1,6 @@
 module Controller {
   requires transitive Coordinator;
   requires java.desktop;
-  exports manager;
-  exports managerRun;
+  exports controller;
+  exports gui;
 }
