@@ -3,4 +3,5 @@ module Controller {
   requires java.desktop;
   exports controller;
   exports gui;
+  exports agentTools;
 }
