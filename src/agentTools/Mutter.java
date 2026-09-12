@@ -10,7 +10,7 @@ import javax.imageio.ImageIO;
 
 import tools.Fs;
 
-/// The desk on a GNOME wayland session: a python helper holds a mutter remote desktop session (pointer and keyboard) and its screen cast (screenshots) open on the session bus.
+/// The desk on a GNOME wayland session: a python helper holds a mutter remote desktop session (pointer and keyboard) and its screen cast (screenshots) open on the session bus. It unlocks the screen and inhibits the screensaver for as long as the helper process runs; closing the desk ends the process, dropping the inhibit and letting the screensaver lock again normally.
 final class Mutter implements Desk{
   private static final String helper= """
     import gi,sys,subprocess
@@ -18,6 +18,9 @@ final class Mutter implements Desk{
     bus=Gio.bus_get_sync(Gio.BusType.SESSION,None)
     def call(name,path,iface,method,args=None): return bus.call_sync(name,path,iface,method,args,None,Gio.DBusCallFlags.NONE,-1,None)
     RD='org.gnome.Mutter.RemoteDesktop';SC='org.gnome.Mutter.ScreenCast';DC='org.gnome.Mutter.DisplayConfig'
+    SS='org.gnome.ScreenSaver';FS='org.freedesktop.ScreenSaver'
+    call(SS,'/org/gnome/ScreenSaver',SS,'SetActive',GLib.Variant('(b)',(False,)))
+    call(FS,'/org/freedesktop/ScreenSaver',FS,'Inhibit',GLib.Variant('(ss)',('agentTools','driving the desktop')))
     monitor=call(DC,'/org/gnome/Mutter/DisplayConfig',DC,'GetCurrentState')[1][0][0][0]
     s=call(RD,'/org/gnome/Mutter/RemoteDesktop',RD,'CreateSession')[0]
     sid=call(RD,s,'org.freedesktop.DBus.Properties','Get',GLib.Variant('(ss)',(RD+'.Session','SessionId')))[0]
