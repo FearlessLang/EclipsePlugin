@@ -18,11 +18,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -119,23 +117,6 @@ public final class Window{
       frame.requestFocus();
       ticker.start();
     });
-  }
-  public String nameFolder(Path folder){
-    var taken= registry.all().stream().map(Entry::alias).collect(Collectors.toSet());
-    return Names.makeUnique(folder,taken,suggested->onEdt(()->prompt(folder,suggested,taken)));
-  }
-  private String prompt(Path folder, String suggested, Set<String> taken){
-    var question= """
-      Another registered project is already called "%s".
-      Choose the name to show for
-      %s
-      A name uses only lowercase letters, digits and single underscores, and starts with a letter or an underscore.""".formatted(Names.compactName(folder),folder);
-    while(true){
-      var answer= JOptionPane.showInputDialog(frame,question,suggested);
-      if (answer == null){ return suggested; }
-      var name= answer.strip();
-      if (Names.isName(name) && Names.isFree(folder,name,taken)){ return name; }
-    }
   }
   public boolean askForget(){
     return onEdt(()->JOptionPane.showConfirmDialog(frame,"""

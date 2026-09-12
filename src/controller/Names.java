@@ -7,9 +7,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.UnaryOperator;
 import java.util.stream.IntStream;
 
+import core.TName;
 import mainCoordinator.MakeDemo;
 import realSourceOracle.BuildWithZip;
 import realSourceOracle.PathEntry;
@@ -31,6 +31,10 @@ public final class Names{
     while(alias.charAt(i) == '_'){ i+= 1; }
     return alias.substring(0,i)+Character.toUpperCase(alias.charAt(i))+alias.substring(i+1);
   }
+  public static String pkgName(String alias){
+    var s= alias.replaceFirst("^_+","");
+    return TName.isPkgName(s) && !s.equals("base") && !s.equals("rank") ? s : "app_"+s;
+  }
   public static boolean isName(String name){
     PathEntry kid;
     try{ kid= new PathEntry(anyRoot,Path.of(name+ext)); }
@@ -47,9 +51,9 @@ public final class Names{
     if (hasMarker(folder,alias)){ return Optional.empty(); }
     return Optional.of("The marker file \""+alias+ext+"\" is missing from\n"+folder+"\nRestore it, or forget and re-add this project folder.");
   }
-  public static String makeUnique(Path folder, Set<String> taken, UnaryOperator<String> ask){
+  public static String makeUnique(Path folder, Set<String> taken){
     var name= compactName(folder);
-    var chosen= isName(name) && !taken.contains(name) ? name : ask.apply(free(folder,folder.getFileName().toString(),taken));
+    var chosen= isName(name) && !taken.contains(name) ? name : free(folder,folder.getFileName().toString(),taken);
     nameAs(folder,chosen);
     return chosen;
   }
@@ -58,7 +62,7 @@ public final class Names{
     var name= isName(base) ? base : "p"+base;
     return IntStream.iterate(1,i->i+1).mapToObj(i->i == 1 ? name : name+i).filter(n->isFree(folder,n,taken)).findFirst().orElseThrow();
   }
-  public static boolean isFree(Path folder, String name, Set<String> taken){ return !taken.contains(name) && !hasMarker(folder,name); }
+  private static boolean isFree(Path folder, String name, Set<String> taken){ return !taken.contains(name) && !hasMarker(folder,name); }
   private static boolean hasMarker(Path folder, String name){ return Files.exists(folder.resolve(name+ext)); }
   private static void nameAs(Path folder, String name){
     assert isName(name);

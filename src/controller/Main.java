@@ -26,8 +26,12 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
+import controller.Registry.Entry;
+import controller.Registry.Kind;
 import fileSupport.NativeLocaleForcer;
+import mainCoordinator.MakeDemo;
 import fileSupport.StringFiles;
 import gui.Tray;
 import gui.Window;
@@ -142,9 +146,9 @@ public final class Main{
     try{ messages= take(); }
     catch(IOException e){ throw Violation.couldNotDrainMessageFolder(msgDir(),e); }
     if (messages.isEmpty()){ return; }
+    window.show();
     messages.forEach(this::register);
     window.foldersChanged();
-    window.show();
   }
   private List<String> take() throws IOException{
     var files= list("*.msg");
@@ -175,10 +179,18 @@ public final class Main{
     if (!registry.has(folder.get())){
       var nested= registry.overlapping(folder.get());
       if (nested.isPresent()){ window.explain(Report.folderNestedWithRegistered(folder.get(),nested.get())); return; }
-      var alias= window.nameFolder(folder.get());
+      var wanted= Names.compactName(folder.get());
+      var fresh= Fs.of(()->{ try(var s= Files.list(folder.get())){ return s.findAny().isEmpty(); } });
+      var taken= registry.all().stream().map(Entry::alias).collect(Collectors.toSet());
+      var alias= Names.makeUnique(folder.get(),taken);
+      if (!alias.equals(wanted)){ window.explain(Report.projectNamed(folder.get(),wanted,alias)); }
       Fs.rmTree(folder.get().resolve(Facts.outDir));
       Fs.rmTree(eclipse.reports(alias));
       registry.add(alias,folder.get());
+      if (fresh){
+        registry.update(folder.get(),e->e.withKind(Kind.code));
+        MakeDemo.hello(folder.get(),Names.pkgName(alias),Names.defaultTypeName(alias));
+      }
       window.foldersChanged();
     }
     window.select(folder.get());
