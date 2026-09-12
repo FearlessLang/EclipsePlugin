@@ -129,7 +129,7 @@ public final class Window{
     SwingUtilities.invokeLater(()->JOptionPane.showMessageDialog(frame,problem.getMessage(),"Fearless",JOptionPane.WARNING_MESSAGE));
   }
   public void select(Path folder){ SwingUtilities.invokeLater(()->tiles.select(folder)); }
-  public void run(Path folder){ SwingUtilities.invokeLater(()->panel(folder).compileOrRun()); }
+  public void run(Path folder, Optional<String> main){ SwingUtilities.invokeLater(()->panel(folder).compileOrRun(main)); }
   public void terminate(Path folder){ SwingUtilities.invokeLater(()->panel(folder).session.terminate()); }
   public void foldersChanged(){ SwingUtilities.invokeLater(this::foldersChangedHere); }
   public List<String> runningPrograms(){ return open.values().stream().filter(this::live).map(this::describe).toList(); }

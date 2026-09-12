@@ -13,6 +13,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.IntStream;
 
+import javax.swing.BorderFactory;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.DefaultListModel;
 import javax.swing.Icon;
@@ -107,9 +108,11 @@ public final class Tiles extends JPanel{
     refresh();
   }
   public void refresh(){
+    var selected= Optional.ofNullable(list.getSelectedValue()).map(r->r.entry().path());
     var rows= registry.all().stream().map(this::row).sorted(((Sort)sort.getSelectedItem()).comparator()).toList();
     model.clear();
     rows.forEach(model::addElement);
+    selected.ifPresent(p->IntStream.range(0,model.size()).filter(i->model.get(i).entry().path().equals(p)).forEach(list::setSelectedIndex));
     syncSpinner();
   }
   public void updateFreshness(Path folder, long modified, boolean upToDate){
@@ -163,6 +166,7 @@ public final class Tiles extends JPanel{
       res.setHorizontalTextPosition(CENTER);
       res.setVerticalTextPosition(BOTTOM);
       res.setToolTipText(row.entry().path()+" - "+row.state().text());
+      res.setBorder(selected ? BorderFactory.createLineBorder(l.getSelectionBackground().darker(),3) : null);
       return res;
     }
   }

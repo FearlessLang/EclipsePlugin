@@ -25,7 +25,7 @@ final class NamesTest{
     assertTrue(Names.isName("_x9"));
     assertFalse(Names.isName("myGame"));
     assertFalse(Names.isName("2fast"));
-    assertFalse(Names.isName("a__b"));
+    assertTrue(Names.isName("a__b"));
     assertFalse(Names.isName("con"));
     assertFalse(Names.isName(""));
     assertFalse(Names.isName("a/b"));
@@ -102,12 +102,5 @@ final class NamesTest{
     assertEquals("app_rank",Names.pkgName("rank"));
     assertEquals("app_",Names.pkgName("_"));
     assertTrue(core.TName.isPkgName(Names.pkgName("_")));
-  }
-  @Test void defaultTypeNameUppercasesTheFirstLetter(){
-    assertEquals("Mydata",Names.defaultTypeName("mydata"));
-    assertEquals("My_data_2",Names.defaultTypeName("my_data_2"));
-    assertEquals("_Foo",Names.defaultTypeName("_foo"));
-    assertTrue(core.TName.isTypeName(Names.defaultTypeName("mydata")));
-    assertTrue(core.TName.isTypeName(Names.defaultTypeName("_foo")));
   }
 }

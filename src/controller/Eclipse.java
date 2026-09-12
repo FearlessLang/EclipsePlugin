@@ -7,6 +7,8 @@ import static java.nio.file.StandardOpenOption.CREATE;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 import controller.Registry.Entry;
@@ -14,6 +16,7 @@ import tools.Fs;
 import tools.JavacTool;
 import userMessages.Report;
 import userMessages.Violation;
+import utils.Join;
 
 /// The manager's side of the Eclipse plugin (fearlessPluginProject). Eclipse writes
 /// nothing into a project folder: it reads projects.txt and each alias's reports from
@@ -22,6 +25,10 @@ public record Eclipse(Path dir){
   private static final Pattern at= Pattern.compile("(?m)^In file: fear:/(\\S+)\\n\\n(\\d+)\\| ");
   public Path reports(String alias){ return dir.resolve(alias); }
   public void note(String text){ append(dir.resolve("console.txt"),text); }
+  public static void state(Path reports, Optional<Map<String,String>> mains, Optional<String> running){
+    Fs.writeUtf8(reports.resolve("mains.txt"),Join.of(mains.orElse(Map.of()).entrySet().stream().map(e->e.getKey()+" "+e.getValue()),"","\n","\n",""));
+    Fs.writeUtf8(reports.resolve("running.txt"),running.orElse(""));
+  }
   public static void append(Path file, String text){
     Fs.ensureDir(file.getParent());
     Fs.ofV(()->Files.writeString(file,text,CREATE,APPEND));

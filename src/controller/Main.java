@@ -33,6 +33,7 @@ import controller.Registry.Entry;
 import controller.Registry.Kind;
 import fileSupport.NativeLocaleForcer;
 import mainCoordinator.MakeDemo;
+import realSourceOracle.AutoloadHandler;
 import fileSupport.StringFiles;
 import gui.Tray;
 import gui.Window;
@@ -173,9 +174,10 @@ public final class Main{
   }
   //A message is the folder to select, or a verb, a newline, then the folder.
   public void register(String message, Consumer<UserError> report){
-    var nl= message.indexOf('\n');
-    var verb= nl < 0 ? "select" : message.substring(0,nl);
-    var folder= projectFolder(message.substring(nl+1),managerDir);
+    var lines= message.lines().toList();
+    if (lines.isEmpty()){ return; }
+    var verb= lines.size() == 1 ? "select" : lines.getFirst();
+    var folder= projectFolder(lines.get(lines.size() == 1 ? 0 : 1),managerDir);
     if (folder.isEmpty()){ return; }
     if (!registry.has(folder.get())){
       var nested= registry.overlapping(folder.get());
@@ -190,14 +192,14 @@ public final class Main{
       registry.add(alias,folder.get());
       if (fresh){
         registry.update(folder.get(),e->e.withKind(Kind.code));
-        MakeDemo.hello(folder.get(),Names.pkgName(alias),Names.defaultTypeName(alias));
+        MakeDemo.hello(folder.get(),Names.pkgName(alias),AutoloadHandler.capFirst(alias));
       }
       window.foldersChanged();
     }
     window.select(folder.get());
     switch(verb){
       case "select" -> {}
-      case "run" -> window.run(folder.get());
+      case "run" -> window.run(folder.get(),lines.size() > 2 ? Optional.of(lines.get(2)) : Optional.empty());
       case "terminate" -> window.terminate(folder.get());
       default -> throw Bug.unreachable();
     }

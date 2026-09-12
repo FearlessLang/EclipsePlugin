@@ -26,11 +26,6 @@ public final class Names{
     var all= markers(f);
     return all.size() == 1 ? stem(all.getFirst()) : f.getFileName().toString();
   }
-  public static String defaultTypeName(String alias){
-    var i= 0;
-    while(alias.charAt(i) == '_'){ i+= 1; }
-    return alias.substring(0,i)+Character.toUpperCase(alias.charAt(i))+alias.substring(i+1);
-  }
   public static String pkgName(String alias){
     var s= alias.replaceFirst("^_+","");
     return TName.isPkgName(s) && !s.equals("base") && !s.equals("rank") ? s : "app_"+s;
@@ -58,7 +53,7 @@ public final class Names{
     return chosen;
   }
   public static String free(Path folder, String wanted, Set<String> taken){
-    var base= wanted.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9_]+","_").replaceAll("_+","_");
+    var base= wanted.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9_]+","_");
     var name= isName(base) ? base : "p"+base;
     return IntStream.iterate(1,i->i+1).mapToObj(i->i == 1 ? name : name+i).filter(n->isFree(folder,n,taken)).findFirst().orElseThrow();
   }

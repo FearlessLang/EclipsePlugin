@@ -4,6 +4,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -35,7 +36,7 @@ public final class Session{
   private ChildJvm child;
   private String current= "";
   private Instant since= Instant.now();
-  private Optional<List<String>> mains= Optional.empty();
+  private Optional<Map<String,String>> mains= Optional.empty();
   public Session(Path folder, Path reports, Executor worker, Consumer<String> out, Runnable changed){
     this.folder= folder;
     this.reports= reports;
@@ -46,7 +47,8 @@ public final class Session{
   public synchronized boolean busy(){ return !current.isEmpty(); }
   public synchronized String current(){ return current; }
   public synchronized Duration elapsed(){ return Duration.between(since,Instant.now()); }
-  public synchronized Optional<List<String>> mains(){ return mains; }
+  public synchronized Optional<List<String>> mains(){ return mains.map(m->List.copyOf(m.keySet())); }
+  public synchronized Optional<Map<String,String>> mainFiles(){ return mains; }
   public synchronized Optional<String> running(){ return child == null ? Optional.empty() : Optional.of(current); }
   public void refresh(){ submit("reading",this::readMains); }
   public void compile(){ submit("compiling",this::doCompile); }
@@ -79,7 +81,7 @@ public final class Session{
     changed.run();
   }
   private void readMains(){
-    Optional<List<String>> res;
+    Optional<Map<String,String>> res;
     try{ var c= coordinator(); res= c.mains(folder,c.sourceOracle(stdLib("base"))); }
     catch(UserError _){ res= Optional.empty(); }
     synchronized(this){ mains= res; }

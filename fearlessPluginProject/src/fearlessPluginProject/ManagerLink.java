@@ -40,11 +40,23 @@ public final class ManagerLink{
   }
   public Path reports(String alias){ return eclipse.resolve(alias); }
   public Path console(){ return eclipse.resolve("console.txt"); }
-  public void send(String verb, Path folder){
+  /// The mains the manager knows for a project, each with the file declaring it; empty until compiled.
+  public Map<String,String> mains(String alias){
+    var res= new LinkedHashMap<String,String>();
+    for (var line : read(reports(alias).resolve("mains.txt")).lines().toList()){
+      var space= line.indexOf(' ');
+      res.put(line.substring(0,space), line.substring(space+1));
+    }
+    return res;
+  }
+  public String running(String alias){ return read(reports(alias).resolve("running.txt")).strip(); }
+  public void send(String verb, Path folder){ send(verb+"\n"+folder); }
+  public void send(String verb, Path folder, String main){ send(verb+"\n"+folder+"\n"+main); }
+  private void send(String message){
     var name= "%020d-%s".formatted(System.currentTimeMillis(), UUID.randomUUID());
     var tmp= messages.resolve(name+".tmp");
     try{
-      Files.writeString(tmp, verb+"\n"+folder);
+      Files.writeString(tmp, message);
       Files.move(tmp, messages.resolve(name+".msg"), StandardCopyOption.ATOMIC_MOVE);
     }
     catch(IOException e){ throw new UncheckedIOException(e); }
