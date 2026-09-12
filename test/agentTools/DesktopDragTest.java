@@ -10,7 +10,7 @@ import java.nio.file.Path;
 
 import org.junit.jupiter.api.Test;
 
-import agentTools.Desk.Key;
+import agentTools.Pilot.Key;
 import tools.Fs;
 import utils.OneOr;
 
@@ -24,17 +24,16 @@ final class DesktopDragTest{
     Fs.ensureDir(source);
     Fs.ensureDir(destination);
     Fs.writeUtf8(source.resolve("example.txt"),content);
-    try(var pilot= new Pilot()){
-      var screen= pilot.shot();
-      int w= screen.getWidth(), h= screen.getHeight();
-      var src= place(pilot,source,w*5/100,h*5/100,w*48/100,h*90/100);
-      var dst= place(pilot,destination,w*52/100,h*5/100,w*95/100,h*90/100);
-      var item= item(pilot,src);
-      pilot.drag(centerX(item),centerY(item),centerX(dst),centerY(dst));
-      Pilot.pause(2000);
-      close(pilot,src);
-      close(pilot,dst);
-    }
+    var pilot= new Pilot();
+    var screen= pilot.shot();
+    int w= screen.getWidth(), h= screen.getHeight();
+    var src= place(pilot,source,w*5/100,h*5/100,w*48/100,h*90/100);
+    var dst= place(pilot,destination,w*52/100,h*5/100,w*95/100,h*90/100);
+    var item= item(pilot,src);
+    pilot.drag(centerX(item),centerY(item),centerX(dst),centerY(dst));
+    Pilot.pause(2000);
+    close(pilot,src);
+    close(pilot,dst);
     var landed= OneOr.of("the dragged file",Fs.walk(desktop,s->s.filter(this::isTheFile).toList()).stream());
     Fs.ofV(()->Files.delete(landed));
     Fs.rmTree(source);
@@ -47,6 +46,7 @@ final class DesktopDragTest{
     Fs.ofV(()->Desktop.getDesktop().open(folder.toFile()));
     Pilot.pause(3000);
     var win= Pilot.changed(before,pilot.shot(),6);
+    assert win.width<before.getWidth() && win.height<before.getHeight();
     pilot.drag(win.x+90,win.y+20,x0+90,y0+20);
     pilot.drag(x0+win.width-1,y0+win.height-1,x1,y1);
     return new Rectangle(x0,y0,x1-x0,y1-y0);
