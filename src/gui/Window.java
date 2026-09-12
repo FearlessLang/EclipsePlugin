@@ -131,6 +131,7 @@ public final class Window{
   public void select(Path folder){ SwingUtilities.invokeLater(()->tiles.select(folder)); }
   public void run(Path folder, Optional<String> main){ SwingUtilities.invokeLater(()->panel(folder).compileOrRun(main)); }
   public void terminate(Path folder){ SwingUtilities.invokeLater(()->panel(folder).session.terminate()); }
+  public void state(Path folder, Path reply){ SwingUtilities.invokeLater(()->panel(folder).state(reply)); }
   public void foldersChanged(){ SwingUtilities.invokeLater(this::foldersChangedHere); }
   public List<String> runningPrograms(){ return open.values().stream().filter(this::live).map(this::describe).toList(); }
   private boolean isRunning(Path folder){ return open.containsKey(folder) && live(open.get(folder)); }

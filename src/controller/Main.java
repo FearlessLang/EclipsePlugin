@@ -172,7 +172,8 @@ public final class Main{
     try(var stream= Files.newDirectoryStream(msgDir(),glob)){ stream.forEach(files::add); }
     return files;
   }
-  //A message is the folder to select, or a verb, a newline, then the folder.
+  //A message is the folder to select, or a verb, a newline, then the folder, then
+  //for run the optional main to run, and for state the file the answer goes to.
   public void register(String message, Consumer<UserError> report){
     var lines= message.lines().toList();
     if (lines.isEmpty()){ return; }
@@ -201,6 +202,7 @@ public final class Main{
       case "select" -> {}
       case "run" -> window.run(folder.get(),lines.size() > 2 ? Optional.of(lines.get(2)) : Optional.empty());
       case "terminate" -> window.terminate(folder.get());
+      case "state" -> window.state(folder.get(),Path.of(lines.get(2)));
       default -> throw Bug.unreachable();
     }
   }

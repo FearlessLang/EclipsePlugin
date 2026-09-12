@@ -40,18 +40,32 @@ public final class ManagerLink{
   }
   public Path reports(String alias){ return eclipse.resolve(alias); }
   public Path console(){ return eclipse.resolve("console.txt"); }
-  /// The mains the manager knows for a project, each with the file declaring it; empty until compiled.
-  public Map<String,String> mains(String alias){
-    var res= new LinkedHashMap<String,String>();
-    for (var line : read(reports(alias).resolve("mains.txt")).lines().toList()){
-      var space= line.indexOf(' ');
-      res.put(line.substring(0,space), line.substring(space+1));
+  /// What the manager answers to a state message: whether the project needs compiling,
+  /// the running main if any, and the known mains each with the file declaring it.
+  public record State(boolean needsCompiling, String running, Map<String,String> mains){}
+  public State state(String alias, Path folder){
+    var reply= reports(alias).resolve("state.txt");
+    try{ Files.deleteIfExists(reply); }
+    catch(IOException e){ throw new UncheckedIOException(e); }
+    send("state", folder, reply.toString());
+    for (int i= 0; i < 100 && !Files.exists(reply); i++){ pause(); }
+    var needsCompiling= false;
+    var running= "";
+    var mains= new LinkedHashMap<String,String>();
+    for (var line : read(reply).lines().toList()){
+      var words= line.split(" ");
+      if (words[0].equals("needsCompiling")){ needsCompiling= true; }
+      if (words[0].equals("running")){ running= words[1]; }
+      if (words[0].equals("main")){ mains.put(words[1], words[2]); }
     }
-    return res;
+    return new State(needsCompiling, running, mains);
   }
-  public String running(String alias){ return read(reports(alias).resolve("running.txt")).strip(); }
+  private static void pause(){
+    try{ Thread.sleep(5); }
+    catch(InterruptedException e){ Thread.currentThread().interrupt(); }
+  }
   public void send(String verb, Path folder){ send(verb+"\n"+folder); }
-  public void send(String verb, Path folder, String main){ send(verb+"\n"+folder+"\n"+main); }
+  public void send(String verb, Path folder, String third){ send(verb+"\n"+folder+"\n"+third); }
   private void send(String message){
     var name= "%020d-%s".formatted(System.currentTimeMillis(), UUID.randomUUID());
     var tmp= messages.resolve(name+".tmp");

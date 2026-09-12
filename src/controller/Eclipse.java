@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import controller.Registry.Entry;
 import tools.Fs;
@@ -25,9 +26,11 @@ public record Eclipse(Path dir){
   private static final Pattern at= Pattern.compile("(?m)^In file: fear:/(\\S+)\\n\\n(\\d+)\\| ");
   public Path reports(String alias){ return dir.resolve(alias); }
   public void note(String text){ append(dir.resolve("console.txt"),text); }
-  public static void state(Path reports, Optional<Map<String,String>> mains, Optional<String> running){
-    Fs.writeUtf8(reports.resolve("mains.txt"),Join.of(mains.orElse(Map.of()).entrySet().stream().map(e->e.getKey()+" "+e.getValue()),"","\n","\n",""));
-    Fs.writeUtf8(reports.resolve("running.txt"),running.orElse(""));
+  public static String state(Optional<Map<String,String>> mains, Optional<String> running){
+    var lines= Stream.concat(
+      Stream.concat(mains.isEmpty() ? Stream.of("needsCompiling") : Stream.of(), running.stream().map(r->"running "+r)),
+      mains.orElse(Map.of()).entrySet().stream().map(e->"main "+e.getKey()+" "+e.getValue()));
+    return Join.of(lines,"","\n","\n","");
   }
   public static void append(Path file, String text){
     Fs.ensureDir(file.getParent());

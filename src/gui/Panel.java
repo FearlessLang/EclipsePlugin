@@ -13,6 +13,7 @@ import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import controller.Eclipse;
 import realSourceOracle.AutoloadHandler;
 import java.time.Instant;
@@ -196,7 +197,6 @@ public final class Panel{
   private void refresh(){
     var entry= entry();
     facts= Facts.of(folder,entry.kind());
-    Eclipse.state(console.getParent(),session.mainFiles(),session.running());
     name.setText(entry.alias());
     details.setText(String.join("\n",lines(entry)));
     details.setCaretPosition(0);
@@ -359,6 +359,11 @@ public final class Panel{
     action.setText(needsCompile ? "Compile" : multi ? "Run selected" : "Run");
     action.setEnabled(!busy && (needsCompile || !selectedMains().isEmpty()));
     openDocs.setEnabled(session.mains().isPresent());
+  }
+  void state(Path reply){
+    var tmp= reply.resolveSibling(reply.getFileName()+".tmp");
+    Fs.writeUtf8(tmp,Eclipse.state(session.mainFiles(),session.running()));
+    Fs.ofV(()->Files.move(tmp,reply,StandardCopyOption.ATOMIC_MOVE));
   }
   void compileOrRun(Optional<String> main){
     information.setOpen(false);

@@ -18,7 +18,8 @@ import org.eclipse.ui.actions.CompoundContributionItem;
 /// The Fearless entries of the right-click menu on a mirrored project or anything in it:
 /// Run for the mains declared in the selected file (all the mains of the project when the
 /// selection is not a file declaring one), Compile while the project is not compiled, and
-/// Terminate while a main of the project runs. Every entry is one message to the manager.
+/// Terminate while a main of the project runs. The manager is asked for the state when
+/// the menu opens; every entry is one message to it.
 public final class PopupItems extends CompoundContributionItem{
   @Override protected IContributionItem[] getContributionItems(){
     var link= ManagerLink.find();
@@ -27,19 +28,18 @@ public final class PopupItems extends CompoundContributionItem{
     var alias= resource.getProject().getName();
     var folder= link.get().projects().get(alias);
     if (folder == null){ return new IContributionItem[0]; }
-    var mains= link.get().mains(alias);
-    var inFile= resource instanceof IFile f ? mains.entrySet().stream().filter(e->e.getValue().equals(fileOf(f))).map(Map.Entry::getKey).toList() : List.<String>of();
-    var offered= inFile.isEmpty() ? List.copyOf(mains.keySet()) : inFile;
+    var state= link.get().state(alias, folder);
+    var inFile= resource instanceof IFile f ? state.mains().entrySet().stream().filter(e->e.getValue().equals(fileOf(f))).map(Map.Entry::getKey).toList() : List.<String>of();
+    var offered= inFile.isEmpty() ? List.copyOf(state.mains().keySet()) : inFile;
     var res= new ArrayList<IContributionItem>();
-    if (mains.isEmpty()){ res.add(action("Compile Fearless project "+alias, ()->link.get().send("run", folder))); }
+    if (state.needsCompiling()){ res.add(action("Compile Fearless project "+alias, ()->link.get().send("run", folder))); }
     if (offered.size() == 1){ res.add(action("Run Fearless "+offered.getFirst(), ()->link.get().send("run", folder, offered.getFirst()))); }
     if (offered.size() > 1){
       var menu= new MenuManager("Run Fearless");
       offered.forEach(m->menu.add(action(m, ()->link.get().send("run", folder, m))));
       res.add(menu);
     }
-    var running= link.get().running(alias);
-    if (!running.isEmpty()){ res.add(action("Terminate Fearless "+running, ()->link.get().send("terminate", folder))); }
+    if (!state.running().isEmpty()){ res.add(action("Terminate Fearless "+state.running(), ()->link.get().send("terminate", folder))); }
     return res.toArray(IContributionItem[]::new);
   }
   private static String fileOf(IFile f){ return f.getProjectRelativePath().removeFirstSegments(1).toString(); }
