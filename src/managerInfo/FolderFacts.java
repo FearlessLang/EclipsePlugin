@@ -8,6 +8,7 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import coordinator.Coordinator;
+import fileSupport.LogFiles;
 import managerData.Kind;
 import realSourceOracle.RealSourceOracleWithZip;
 import tools.Fs;
@@ -18,7 +19,6 @@ public record FolderFacts(
     long jsonStamp, long cacheStamp, List<String> pkgs, Optional<String> problem){
   public static final String outDir= Coordinator.outDir;
   ///Logs and reports Fearless writes about a project: never content, so writing one must not make the cache look stale.
-  public static final String runDir= ".out";
   public boolean valid(){ return problem.isEmpty(); }
   public boolean cacheUpToDate(){ return cacheStamp >= 0 && cacheStamp >= modified; }
   public boolean hasCache(){ return hasCache(folder); }
@@ -53,7 +53,7 @@ public record FolderFacts(
   }
   private static Stream<Path> authored(Path folder, Stream<Path> all){
     var cache= folder.resolve(outDir);
-    var written= folder.resolve(runDir);
+    var written= folder.resolve(LogFiles.runDir);
     return all.filter(p->!p.startsWith(cache) && !p.startsWith(written));
   }
   private static long newest(List<Path> files){ return files.stream().mapToLong(Fs::lastModified).max().orElse(-1); }

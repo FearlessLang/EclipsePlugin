@@ -42,6 +42,7 @@ import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 
 import core.TName;
+import fileSupport.LogFiles;
 import managerData.Kind;
 import managerData.ManagerData;
 import managerIcons.BadgeIcon;

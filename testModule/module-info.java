@@ -3,5 +3,4 @@ module Controller {
   requires org.junit.jupiter.api;
   requires java.desktop;
   exports manager;
-  exports mainController;
 }
